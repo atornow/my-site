@@ -99,3 +99,39 @@ jobs:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [scan_ruby, scan_js, lint, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H armaan-server >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+        run: |
+          ssh deploy_user@armaan-server "cd /opt/my-site-app && \
+          git pull origin main && \
+          docker build -t my-site-app:latest . && \
+          docker stop my-site-app || true && \
+          docker rm my-site-app || true && \
+          docker run -d --name my-site-app \
+            -p 3000:80 \
+            -e RAILS_MASTER_KEY=$RAILS_MASTER_KEY \
+            -e DATABASE_URL=postgres://my_site:${{ secrets.DB_PASSWORD }}@host.docker.internal:5432/my_site_production \
+            -e RAILS_ENV=production \
+            --restart unless-stopped \
+            my-site-app:latest && \
+          docker image prune -f"
