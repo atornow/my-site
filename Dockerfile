@@ -25,7 +25,10 @@ RUN bundle config --global frozen 1 && \
 # Copy application code
 COPY . .
 
-# Precompile assets
+# Precompile assets for production
+ENV RAILS_ENV=production
+ENV RUBY_DEBUG_OPEN=false
+ENV RUBY_DEBUG_LAZY=false
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Create a non-root user
