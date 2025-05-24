@@ -4,6 +4,8 @@ services:
   web:
     build: .
     network_mode: "host"
+    env_file:
+      - .env
     environment:
       - RAILS_ENV=production
       - DATABASE_URL=postgresql://my_site_user:${DATABASE_PASSWORD}@localhost:5432/my_site_production
