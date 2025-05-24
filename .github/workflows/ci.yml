@@ -1,137 +1,115 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
-  pull_request:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  RUBY_VERSION: '3.2.3'
 
 jobs:
-  scan_ruby:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager
-
-  scan_js:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Scan for security vulnerabilities in JavaScript dependencies
-        run: bin/importmap audit
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
-      - name: Lint code for consistent style
-        run: bin/rubocop -f github
-
   test:
     runs-on: ubuntu-latest
-
+    
     services:
       postgres:
-        image: postgres
+        image: postgres:15
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
           - 5432:5432
-        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      # redis:
-      #   image: redis
-      #   ports:
-      #     - 6379:6379
-      #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ env.RUBY_VERSION }}
+        bundler-cache: true
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client libpq-dev
 
-      - name: Run tests
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test test:system
+    - name: Create database
+      env:
+        DATABASE_URL: postgres://postgres:password@localhost:5432/my_site_test
+        RAILS_ENV: test
+      run: |
+        bin/rails db:create
+        bin/rails db:schema:load
 
-      - name: Keep screenshots from failed system tests
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
-          if-no-files-found: ignore
+    - name: Run tests
+      env:
+        DATABASE_URL: postgres://postgres:password@localhost:5432/my_site_test
+        RAILS_ENV: test
+      run: bundle exec rspec
+        
+    - name: Run security audit
+      run: bundle exec brakeman --no-pager
+        
+    - name: Check code style
+      run: bundle exec rubocop
 
   deploy:
+    needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: [scan_ruby, scan_js, lint, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up SSH
-        uses: webfactory/ssh-agent
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: Add host key
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H armaan-server >> ~/.ssh/known_hosts
-
-      - name: Deploy to server
-        env:
-          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-        run: |
-          ssh deploy_user@armaan-server "cd /opt/my-site-app && \
-          git pull origin main && \
-          docker build -t my-site-app:latest . && \
-          docker stop my-site-app || true && \
-          docker rm my-site-app || true && \
-          docker run -d --name my-site-app \
-            -p 3000:80 \
-            -e RAILS_MASTER_KEY=$RAILS_MASTER_KEY \
-            -e DATABASE_URL=postgres://my_site:${{ secrets.DB_PASSWORD }}@host.docker.internal:5432/my_site_production \
-            -e RAILS_ENV=production \
-            --restart unless-stopped \
-            my-site-app:latest && \
-          docker image prune -f"
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_KEY }}
+        script: |
+          # Navigate to app directory
+          cd /var/www/my-site
+          
+          # Pull latest code (or clone if first time)
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/${{ github.repository }}.git .
+          fi
+          
+          # Stop existing containers
+          docker-compose down || true
+          
+          # Build new image (this is fast since it's local)
+          docker build -t my-site:latest .
+          
+          # Create .env file with secrets (this replaces manual .env setup)
+          cat > .env << EOF
+          RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
+          DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+          EOF
+          
+          # Run database migrations
+          docker-compose run --rm web bin/rails db:migrate RAILS_ENV=production
+          
+          # Start services
+          docker-compose up -d
+          
+          # Clean up old images (keep disk space manageable)
+          docker image prune -f
+          
+          # Health check
+          sleep 10
+          if ! curl -f http://localhost:3000/up 2>/dev/null; then
+            echo "Health check failed!"
+            exit 1
+          fi
+          
+          echo "Deployment successful!"

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=postgresql://my_site_user:${DATABASE_PASSWORD}@host.docker.internal:5432/my_site_production
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - RAILS_SERVE_STATIC_FILES=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    volumes:
+      - ./storage:/rails/storage
+      - ./log:/rails/log
+    depends_on:
+      - db_check
+
+  db_check:
+    image: postgres:15
+    command: ["pg_isready", "-h", "host.docker.internal", "-p", "5432", "-U", "my_site_user"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
