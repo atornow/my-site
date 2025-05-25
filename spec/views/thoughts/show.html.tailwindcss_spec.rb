@@ -6,6 +6,9 @@ RSpec.describe "thoughts/show", type: :view do
       title: "Title",
       body: "MyText"
     ))
+    
+    # Stub authentication methods
+    allow(view).to receive(:user_signed_in?).and_return(false)
   end
 
   it "renders attributes in <p>" do

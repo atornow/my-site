@@ -13,15 +13,14 @@ require 'rails_helper'
 # sticking to rails and rspec-rails APIs to keep things simple and stable.
 
 RSpec.describe "/thoughts", type: :request do
-  # This should return the minimal set of attributes required to create a valid
-  # Thought. As you add validations to Thought, be sure to
-  # adjust the attributes here as well.
+  let(:user) { User.create!(email: 'test@example.com', password: 'password123', password_confirmation: 'password123') }
+  
   let(:valid_attributes) {
-    skip("Add a hash of attributes valid for your model")
+    { title: "Test Thought", body: "This is a test thought" }
   }
 
   let(:invalid_attributes) {
-    skip("Add a hash of attributes invalid for your model")
+    { title: "", body: "This is a test thought" }
   }
 
   describe "GET /index" do
@@ -41,90 +40,147 @@ RSpec.describe "/thoughts", type: :request do
   end
 
   describe "GET /new" do
-    it "renders a successful response" do
-      get new_thought_url
-      expect(response).to be_successful
+    context "when user is authenticated" do
+      before { sign_in user }
+      
+      it "renders a successful response" do
+        get new_thought_url
+        expect(response).to be_successful
+      end
+    end
+    
+    context "when user is not authenticated" do
+      it "redirects to login" do
+        get new_thought_url
+        expect(response).to redirect_to(new_user_session_path)
+      end
     end
   end
 
   describe "GET /edit" do
-    it "renders a successful response" do
-      thought = Thought.create! valid_attributes
-      get edit_thought_url(thought)
-      expect(response).to be_successful
+    context "when user is authenticated" do
+      before { sign_in user }
+      
+      it "renders a successful response" do
+        thought = Thought.create! valid_attributes
+        get edit_thought_url(thought)
+        expect(response).to be_successful
+      end
+    end
+    
+    context "when user is not authenticated" do
+      it "redirects to login" do
+        thought = Thought.create! valid_attributes
+        get edit_thought_url(thought)
+        expect(response).to redirect_to(new_user_session_path)
+      end
     end
   end
 
   describe "POST /create" do
-    context "with valid parameters" do
-      it "creates a new Thought" do
-        expect {
+    context "when user is authenticated" do
+      before { sign_in user }
+      
+      context "with valid parameters" do
+        it "creates a new Thought" do
+          expect {
+            post thoughts_url, params: { thought: valid_attributes }
+          }.to change(Thought, :count).by(1)
+        end
+
+        it "redirects to the created thought" do
           post thoughts_url, params: { thought: valid_attributes }
-        }.to change(Thought, :count).by(1)
+          expect(response).to redirect_to(thought_url(Thought.last))
+        end
       end
 
-      it "redirects to the created thought" do
-        post thoughts_url, params: { thought: valid_attributes }
-        expect(response).to redirect_to(thought_url(Thought.last))
+      context "with invalid parameters" do
+        it "does not create a new Thought" do
+          expect {
+            post thoughts_url, params: { thought: invalid_attributes }
+          }.to change(Thought, :count).by(0)
+        end
+
+        it "renders a response with 422 status" do
+          post thoughts_url, params: { thought: invalid_attributes }
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
       end
     end
-
-    context "with invalid parameters" do
-      it "does not create a new Thought" do
-        expect {
-          post thoughts_url, params: { thought: invalid_attributes }
-        }.to change(Thought, :count).by(0)
-      end
-
-      it "renders a response with 422 status (i.e. to display the 'new' template)" do
-        post thoughts_url, params: { thought: invalid_attributes }
-        expect(response).to have_http_status(:unprocessable_entity)
+    
+    context "when user is not authenticated" do
+      it "redirects to login" do
+        post thoughts_url, params: { thought: valid_attributes }
+        expect(response).to redirect_to(new_user_session_path)
       end
     end
   end
 
   describe "PATCH /update" do
-    context "with valid parameters" do
+    context "when user is authenticated" do
+      before { sign_in user }
+      
       let(:new_attributes) {
-        skip("Add a hash of attributes valid for your model")
+        { title: "Updated Thought", body: "This is an updated thought" }
       }
 
-      it "updates the requested thought" do
-        thought = Thought.create! valid_attributes
-        patch thought_url(thought), params: { thought: new_attributes }
-        thought.reload
-        skip("Add assertions for updated state")
+      context "with valid parameters" do
+        it "updates the requested thought" do
+          thought = Thought.create! valid_attributes
+          patch thought_url(thought), params: { thought: new_attributes }
+          thought.reload
+          expect(thought.title).to eq("Updated Thought")
+        end
+
+        it "redirects to the thought" do
+          thought = Thought.create! valid_attributes
+          patch thought_url(thought), params: { thought: new_attributes }
+          expect(response).to redirect_to(thought_url(thought))
+        end
       end
 
-      it "redirects to the thought" do
-        thought = Thought.create! valid_attributes
-        patch thought_url(thought), params: { thought: new_attributes }
-        thought.reload
-        expect(response).to redirect_to(thought_url(thought))
+      context "with invalid parameters" do
+        it "renders a response with 422 status" do
+          thought = Thought.create! valid_attributes
+          patch thought_url(thought), params: { thought: invalid_attributes }
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
       end
     end
-
-    context "with invalid parameters" do
-      it "renders a response with 422 status (i.e. to display the 'edit' template)" do
+    
+    context "when user is not authenticated" do
+      it "redirects to login" do
         thought = Thought.create! valid_attributes
-        patch thought_url(thought), params: { thought: invalid_attributes }
-        expect(response).to have_http_status(:unprocessable_entity)
+        patch thought_url(thought), params: { thought: valid_attributes }
+        expect(response).to redirect_to(new_user_session_path)
       end
     end
   end
 
   describe "DELETE /destroy" do
-    it "destroys the requested thought" do
-      thought = Thought.create! valid_attributes
-      expect {
-        delete thought_url(thought)
-      }.to change(Thought, :count).by(-1)
-    end
+    context "when user is authenticated" do
+      before { sign_in user }
+      
+      it "destroys the requested thought" do
+        thought = Thought.create! valid_attributes
+        expect {
+          delete thought_url(thought)
+        }.to change(Thought, :count).by(-1)
+      end
 
-    it "redirects to the thoughts list" do
-      thought = Thought.create! valid_attributes
-      delete thought_url(thought)
-      expect(response).to redirect_to(thoughts_url)
+      it "redirects to the thoughts list" do
+        thought = Thought.create! valid_attributes
+        delete thought_url(thought)
+        expect(response).to redirect_to(thoughts_url)
+      end
+    end
+    
+    context "when user is not authenticated" do
+      it "redirects to login" do
+        thought = Thought.create! valid_attributes
+        delete thought_url(thought)
+        expect(response).to redirect_to(new_user_session_path)
+      end
     end
   end
 end
