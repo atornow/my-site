@@ -22,6 +22,9 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
+# Authentication
+gem "devise"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
@@ -54,6 +57,8 @@ group :development, :test do
 
   # Testing framework for Ruby on Rails [https://rspec.info/]
   gem "rspec-rails"
+
+  gem "dotenv-rails"
 end
 
 group :development do
