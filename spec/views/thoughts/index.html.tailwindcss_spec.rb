@@ -12,7 +12,7 @@ RSpec.describe "thoughts/index", type: :view do
         body: "MyText"
       )
     ])
-    
+
     # Stub authentication methods
     allow(view).to receive(:user_signed_in?).and_return(false)
   end

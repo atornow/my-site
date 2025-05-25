@@ -14,7 +14,7 @@ require 'rails_helper'
 
 RSpec.describe "/thoughts", type: :request do
   let(:user) { User.create!(email: 'test@example.com', password: 'password123', password_confirmation: 'password123') }
-  
+
   let(:valid_attributes) {
     { title: "Test Thought", body: "This is a test thought" }
   }
@@ -42,13 +42,13 @@ RSpec.describe "/thoughts", type: :request do
   describe "GET /new" do
     context "when user is authenticated" do
       before { sign_in user }
-      
+
       it "renders a successful response" do
         get new_thought_url
         expect(response).to be_successful
       end
     end
-    
+
     context "when user is not authenticated" do
       it "redirects to login" do
         get new_thought_url
@@ -60,14 +60,14 @@ RSpec.describe "/thoughts", type: :request do
   describe "GET /edit" do
     context "when user is authenticated" do
       before { sign_in user }
-      
+
       it "renders a successful response" do
         thought = Thought.create! valid_attributes
         get edit_thought_url(thought)
         expect(response).to be_successful
       end
     end
-    
+
     context "when user is not authenticated" do
       it "redirects to login" do
         thought = Thought.create! valid_attributes
@@ -80,7 +80,7 @@ RSpec.describe "/thoughts", type: :request do
   describe "POST /create" do
     context "when user is authenticated" do
       before { sign_in user }
-      
+
       context "with valid parameters" do
         it "creates a new Thought" do
           expect {
@@ -107,7 +107,7 @@ RSpec.describe "/thoughts", type: :request do
         end
       end
     end
-    
+
     context "when user is not authenticated" do
       it "redirects to login" do
         post thoughts_url, params: { thought: valid_attributes }
@@ -119,7 +119,7 @@ RSpec.describe "/thoughts", type: :request do
   describe "PATCH /update" do
     context "when user is authenticated" do
       before { sign_in user }
-      
+
       let(:new_attributes) {
         { title: "Updated Thought", body: "This is an updated thought" }
       }
@@ -147,7 +147,7 @@ RSpec.describe "/thoughts", type: :request do
         end
       end
     end
-    
+
     context "when user is not authenticated" do
       it "redirects to login" do
         thought = Thought.create! valid_attributes
@@ -160,7 +160,7 @@ RSpec.describe "/thoughts", type: :request do
   describe "DELETE /destroy" do
     context "when user is authenticated" do
       before { sign_in user }
-      
+
       it "destroys the requested thought" do
         thought = Thought.create! valid_attributes
         expect {
@@ -174,7 +174,7 @@ RSpec.describe "/thoughts", type: :request do
         expect(response).to redirect_to(thoughts_url)
       end
     end
-    
+
     context "when user is not authenticated" do
       it "redirects to login" do
         thought = Thought.create! valid_attributes
