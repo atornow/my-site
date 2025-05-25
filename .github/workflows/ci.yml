@@ -80,30 +80,26 @@ jobs:
 
           # Pull latest code (or clone if first time)
           if [ -d ".git" ]; then
-            git pull origin main
+            # Fix git pull conflict by forcing update
+            git fetch origin main
           else
             git clone https://github.com/atornow/my-site.git .
           fi
 
           # Stop existing containers
-          docker-compose down || true
+          RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" DATABASE_PASSWORD="${DATABASE_PASSWORD}" ADMIN_PASSWORD="${ADMIN_PASSWORD}" docker-compose down || true
 
           # Build new image (this is fast since it's local)
           docker build -t my-site:latest .
 
           # Clean up orphaned containers
-          docker-compose down --remove-orphans || true
-
-          # Export environment variables so docker-compose can access them
-          export RAILS_MASTER_KEY="${RAILS_MASTER_KEY}"
-          export DATABASE_PASSWORD="${DATABASE_PASSWORD}"
-          export ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+          RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" DATABASE_PASSWORD="${DATABASE_PASSWORD}" ADMIN_PASSWORD="${ADMIN_PASSWORD}" docker-compose down --remove-orphans || true
 
           # Run database migrations with environment variables
-          docker-compose run --rm web bin/rails db:migrate RAILS_ENV=production
+          RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" DATABASE_PASSWORD="${DATABASE_PASSWORD}" ADMIN_PASSWORD="${ADMIN_PASSWORD}" docker-compose run --rm app bin/rails db:migrate RAILS_ENV=production
 
           # Start services with environment variables  
-          docker-compose up -d
+          RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" DATABASE_PASSWORD="${DATABASE_PASSWORD}" ADMIN_PASSWORD="${ADMIN_PASSWORD}" docker-compose up -d
 
           # Clean up old images (keep disk space manageable)
           docker image prune -f
