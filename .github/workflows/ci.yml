@@ -89,9 +89,8 @@ jobs:
           docker stop my-site || true
           docker rm my-site || true
           docker run -d --name my-site \
-            -p 3000:3000 \
+            --network host \
             -e RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }} \
-            -e DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production \
             -e DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
             -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
             my-site:latest
