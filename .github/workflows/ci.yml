@@ -87,16 +87,14 @@ jobs:
             git clone https://github.com/atornow/my-site.git .
           fi
 
-          # Stop existing containers
-          docker-compose down || true
+          # Stop existing container if running
+          docker stop my-site-web || true
+          docker rm my-site-web || true
 
-          # Build new image (this is fast since it's local)
-          docker build -t my-site:latest .
+          # Build new image without cache
+          docker build --no-cache -t my-site:latest .
 
-          # Clean up orphaned containers
-          docker-compose down --remove-orphans || true
-
-          # Run database migrations directly with docker (bypassing docker-compose service name issues)
+          # Run database migrations directly with docker
           docker run --rm --network=host \
             -e RAILS_ENV=production \
             -e DATABASE_URL="postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
@@ -104,8 +102,22 @@ jobs:
             -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
             my-site:latest bin/rails db:migrate
 
-          # Start services with environment variables  
-          RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" docker-compose up -d
+          # Create storage and log directories if they don't exist
+          mkdir -p ./storage ./log
+
+          # Start the application container
+          docker run -d \
+            --name my-site-web \
+            --network=host \
+            --restart=unless-stopped \
+            -e RAILS_ENV=production \
+            -e DATABASE_URL="postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
+            -e RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" \
+            -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
+            -e RAILS_SERVE_STATIC_FILES=true \
+            -v $(pwd)/storage:/rails/storage \
+            -v $(pwd)/log:/rails/log \
+            my-site:latest
 
           # Clean up old images (keep disk space manageable)
           docker image prune -f
@@ -119,7 +131,7 @@ jobs:
           if [ "$RESPONSE" != "200" ]; then
             echo "Health check failed! Response code: $RESPONSE"
             echo "Checking logs..."
-            docker-compose logs --tail=50
+            docker logs my-site-web --tail=50
             exit 1
           fi
 
