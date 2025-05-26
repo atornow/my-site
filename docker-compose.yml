@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    network_mode: "host"
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=postgresql://my_site_user:${DATABASE_PASSWORD}@localhost:5432/my_site_production
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - RAILS_SERVE_STATIC_FILES=true
+    restart: unless-stopped
+    volumes:
+      - ./storage:/rails/storage
+      - ./log:/rails/log 

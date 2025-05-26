@@ -87,45 +87,28 @@ jobs:
             git clone https://github.com/atornow/my-site.git .
           fi
 
-          # Stop existing container if running
-          docker stop my-site-web || true
-          docker rm my-site-web || true
+          # Stop existing containers
+          docker-compose down || true
 
           # Build new image without cache
           docker build --no-cache -t my-site:latest .
 
-          # Create environment file for Docker
-          cat > .env.production << EOF
-          RAILS_ENV=production
-          DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production
-          RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
-          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          EOF
+          # Clean up orphaned containers
+          docker-compose down --remove-orphans || true
 
           # Run database migrations directly with docker
           docker run --rm --network=host \
-            --env-file .env.production \
+            -e RAILS_ENV=production \
+            -e DATABASE_URL="postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
+            -e RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" \
+            -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
             my-site:latest bin/rails db:migrate
 
-          # Create storage and log directories if they don't exist
-          mkdir -p ./storage ./log
-
-          # Start the application container
-          docker run -d \
-            --name my-site-web \
-            --network=host \
-            --restart=unless-stopped \
-            --env-file .env.production \
-            -e RAILS_SERVE_STATIC_FILES=true \
-            -v $(pwd)/storage:/rails/storage \
-            -v $(pwd)/log:/rails/log \
-            my-site:latest
+          # Start services with environment variables  
+          RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" docker-compose up -d
 
           # Clean up old images (keep disk space manageable)
           docker image prune -f
-
-          # Clean up environment file for security
-          rm -f .env.production
 
           # Health check with more detailed output
           sleep 15
@@ -136,7 +119,7 @@ jobs:
           if [ "$RESPONSE" != "200" ]; then
             echo "Health check failed! Response code: $RESPONSE"
             echo "Checking logs..."
-            docker logs my-site-web --tail=50
+            docker-compose logs --tail=50
             exit 1
           fi
 
