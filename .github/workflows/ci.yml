@@ -94,12 +94,17 @@ jobs:
           # Build new image without cache
           docker build --no-cache -t my-site:latest .
 
+          # Create environment file for Docker
+          cat > .env.production << EOF
+          RAILS_ENV=production
+          DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production
+          RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+          EOF
+
           # Run database migrations directly with docker
           docker run --rm --network=host \
-            -e RAILS_ENV=production \
-            -e "DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
-            -e "RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}" \
-            -e "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
+            --env-file .env.production \
             my-site:latest bin/rails db:migrate
 
           # Create storage and log directories if they don't exist
@@ -110,10 +115,7 @@ jobs:
             --name my-site-web \
             --network=host \
             --restart=unless-stopped \
-            -e RAILS_ENV=production \
-            -e "DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
-            -e "RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}" \
-            -e "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
+            --env-file .env.production \
             -e RAILS_SERVE_STATIC_FILES=true \
             -v $(pwd)/storage:/rails/storage \
             -v $(pwd)/log:/rails/log \
@@ -121,6 +123,9 @@ jobs:
 
           # Clean up old images (keep disk space manageable)
           docker image prune -f
+
+          # Clean up environment file for security
+          rm -f .env.production
 
           # Health check with more detailed output
           sleep 15
