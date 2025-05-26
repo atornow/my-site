@@ -38,8 +38,7 @@ RUN groupadd --system --gid 1000 rails && \
 
 USER rails:rails
 
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 # Expose port
 EXPOSE 3000
-
-# Start the server
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]

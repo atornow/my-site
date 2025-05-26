@@ -80,47 +80,18 @@ jobs:
 
           # Pull latest code (or clone if first time)
           if [ -d ".git" ]; then
-            # Fix git pull conflict by forcing update
-            git fetch origin main
-            git reset --hard origin/main
+            git pull origin main
           else
             git clone https://github.com/atornow/my-site.git .
           fi
 
-          # Stop existing containers
-          docker-compose down || true
-
-          # Build new image without cache
-          docker build --no-cache -t my-site:latest .
-
-          # Clean up orphaned containers
-          docker-compose down --remove-orphans || true
-
-          # Run database migrations directly with docker
-          docker run --rm --network=host \
-            -e RAILS_ENV=production \
-            -e DATABASE_URL="postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
-            -e RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" \
-            -e ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
-            my-site:latest bin/rails db:migrate
-
-          # Start services with environment variables  
-          RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}" DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" docker-compose up -d
-
-          # Clean up old images (keep disk space manageable)
-          docker image prune -f
-
-          # Health check with more detailed output
-          sleep 15
-          echo "Checking health..."
-          RESPONSE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ || echo "000")
-          echo "Health check response: $RESPONSE"
-
-          if [ "$RESPONSE" != "200" ]; then
-            echo "Health check failed! Response code: $RESPONSE"
-            echo "Checking logs..."
-            docker-compose logs --tail=50
-            exit 1
-          fi
-
-          echo "Deployment successful!"
+          docker build -t my-site:latest .
+          docker stop my-site || true
+          docker rm my-site || true
+          docker run -d --name my-site \
+            -p 3000:3000 \
+            -e RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }} \
+            -e DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production \
+            -e DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
+            -e ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} \
+            my-site:latest
