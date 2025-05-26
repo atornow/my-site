@@ -75,11 +75,6 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.PRIVATE_KEY }}
         script: |
-          # Set environment variables
-          export DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}"
-          export RAILS_MASTER_KEY="${{ secrets.RAILS_MASTER_KEY }}"
-          export ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}"
-          
           # Navigate to app directory
           cd /var/www/my-site
 
@@ -102,9 +97,9 @@ jobs:
           # Run database migrations directly with docker
           docker run --rm --network=host \
             -e RAILS_ENV=production \
-            -e DATABASE_URL="postgresql://my_site_user:${DATABASE_PASSWORD}@localhost:5432/my_site_production" \
-            -e RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" \
-            -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
+            -e "DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
+            -e "RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}" \
+            -e "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
             my-site:latest bin/rails db:migrate
 
           # Create storage and log directories if they don't exist
@@ -116,9 +111,9 @@ jobs:
             --network=host \
             --restart=unless-stopped \
             -e RAILS_ENV=production \
-            -e DATABASE_URL="postgresql://my_site_user:${DATABASE_PASSWORD}@localhost:5432/my_site_production" \
-            -e RAILS_MASTER_KEY="${RAILS_MASTER_KEY}" \
-            -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
+            -e "DATABASE_URL=postgresql://my_site_user:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/my_site_production" \
+            -e "RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}" \
+            -e "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
             -e RAILS_SERVE_STATIC_FILES=true \
             -v $(pwd)/storage:/rails/storage \
             -v $(pwd)/log:/rails/log \
