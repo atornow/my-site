@@ -13,14 +13,18 @@ RSpec.describe "thoughts/index", type: :view do
       )
     ])
 
+    # Assign featured thoughts as an empty array to prevent nil error
+    assign(:featured_thoughts, [])
+
     # Stub authentication methods
     allow(view).to receive(:user_signed_in?).and_return(false)
   end
 
   it "renders a list of thoughts" do
     render
-    cell_selector = 'div>p'
-    assert_select cell_selector, text: Regexp.new("Title".to_s), count: 2
-    assert_select cell_selector, text: Regexp.new("MyText".to_s), count: 2
+    # Check for titles in h2 elements within article.post-body
+    assert_select "article.post-body h2.post-title", text: Regexp.new("Title".to_s), count: 2
+    # Check for body text in p elements within article.post-body
+    assert_select "article.post-body p", text: Regexp.new("MyText".to_s), count: 2
   end
 end
