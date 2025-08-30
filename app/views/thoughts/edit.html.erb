@@ -1,10 +1,12 @@
 <% content_for :title, "Editing thought" %>
 
-<div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing thought</h1>
+<div class="content">
+  <h1 style="font-size: 2rem; margin-bottom: 2rem; font-weight: 600;">Editing thought</h1>
 
   <%= render "form", thought: @thought %>
 
-  <%= link_to "Show this thought", @thought, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to thoughts", thoughts_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+  <div style="margin-top: 2rem;">
+    <%= link_to "← Back to post", @thought, class: "btn", style: "background: #f8f9fa; color: #333; margin-right: 1rem;" %>
+    <%= link_to "← Back to posts", root_path, class: "btn", style: "background: #f8f9fa; color: #333;" %>
+  </div>
 </div>

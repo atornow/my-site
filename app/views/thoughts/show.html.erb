@@ -1,19 +1,37 @@
-<% content_for :title, "Showing thought" %>
+<% content_for :title, @thought.title %>
 
-<div class="md:w-2/3 w-full">
+<div class="content">
   <% if notice.present? %>
     <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="font-bold text-4xl">Showing thought</h1>
+  <article class="post-body">
+    <h1 class="post-title" style="font-size: 2.5rem; margin-bottom: 1rem;">
+      <%= @thought.title %>
+    </h1>
+    
+    <div class="post-meta" style="margin-bottom: 2rem;">
+      <span class="post-date"><%= @thought.created_at.strftime("%d %b %Y") %></span>
+      <% if @thought.featured? %>
+        <span style="color: #007bff; margin-left: 1rem;">• Featured</span>
+      <% end %>
+    </div>
 
-  <%= render @thought %>
+    <div class="post-content" style="line-height: 1.7; font-size: 1.1rem;">
+      <%= simple_format(@thought.body) %>
+    </div>
+  </article>
 
-  <% if user_signed_in? %>
-    <%= link_to "Edit this thought", edit_thought_path(@thought), class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <% end %>
-  <%= link_to "Back to thoughts", thoughts_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <% if user_signed_in? %>
-    <%= button_to "Destroy this thought", @thought, method: :delete, form_class: "sm:inline-block mt-2 sm:mt-0 sm:ml-2", class: "w-full rounded-md px-3.5 py-2.5 text-white bg-red-600 hover:bg-red-500 font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
-  <% end %>
+  <div class="post-actions" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e9ecef;">
+    <%= link_to "← Back to posts", root_path, class: "btn", style: "background: #f8f9fa; color: #333; margin-right: 1rem;" %>
+    
+    <% if user_signed_in? %>
+      <%= link_to "Edit", edit_thought_path(@thought), class: "btn", style: "background: #007bff; color: white; margin-right: 1rem;" %>
+      <%= button_to "Delete", @thought, method: :delete, 
+          form_class: "inline-block", 
+          class: "btn", 
+          style: "background: #dc3545; color: white;",
+          data: { turbo_confirm: "Are you sure?" } %>
+    <% end %>
+  </div>
 </div>

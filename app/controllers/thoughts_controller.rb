@@ -4,7 +4,8 @@ class ThoughtsController < ApplicationController
 
   # GET /thoughts or /thoughts.json
   def index
-    @thoughts = Thought.all
+    @featured_thoughts = Thought.featured.recent.limit(3)
+    @thoughts = Thought.recent.limit(10)
   end
 
   # GET /thoughts/1 or /thoughts/1.json
@@ -66,6 +67,6 @@ class ThoughtsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def thought_params
-      params.expect(thought: [ :title, :body ])
+      params.expect(thought: [ :title, :body, :featured ])
     end
 end

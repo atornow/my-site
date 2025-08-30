@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "My Site" %></title>
+    <title><%= content_for(:title) || "Armaan Tornow" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -22,27 +22,11 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <nav class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-      <div class="container mx-auto px-5 py-4 flex justify-between items-center">
-        <%= link_to "My Site", root_path, class: "text-xl font-bold text-gray-900" %>
-        
-        <div class="flex items-center space-x-4">
-          <% if user_signed_in? %>
-            <span class="text-gray-600">Welcome, <%= current_user.email %></span>
-            <%= link_to "Logout", destroy_user_session_path, 
-                data: { "turbo-method": :delete }, 
-                class: "text-red-600 hover:text-red-800 font-medium" %>
-          <% else %>
-            <%= link_to "Login", new_user_session_path, 
-                class: "text-blue-600 hover:text-blue-800 font-medium" %>
-          <% end %>
-        </div>
-      </div>
-    </nav>
+  <body class="index home">
+    <%= render 'layouts/sidebar' %>
 
-    <main class="container mx-auto mt-28 px-5 flex">
-      <div class="w-full">
+    <main class="container">
+      <div class="content">
         <% if notice %>
           <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
             <%= notice %>
