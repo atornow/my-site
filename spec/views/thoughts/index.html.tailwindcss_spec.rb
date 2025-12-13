@@ -22,9 +22,9 @@ RSpec.describe "thoughts/index", type: :view do
 
   it "renders a list of thoughts" do
     render
-    # Check for titles in h2 elements within article.post-body
-    assert_select "article.post-body h2.post-title", text: Regexp.new("Title".to_s), count: 2
-    # Check for body text in p elements within article.post-body
-    assert_select "article.post-body p", text: Regexp.new("MyText".to_s), count: 2
+    # Check for titles in h3 elements within article elements
+    assert_select "article h3", text: Regexp.new("Title".to_s), count: 2
+    # Check for body text in p elements within article elements
+    assert_select "article p", text: Regexp.new("MyText".to_s), count: 2
   end
 end

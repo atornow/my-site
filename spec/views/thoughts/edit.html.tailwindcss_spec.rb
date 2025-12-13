@@ -10,6 +10,7 @@ RSpec.describe "thoughts/edit", type: :view do
 
   before(:each) do
     assign(:thought, thought)
+    allow(view).to receive(:user_signed_in?).and_return(false)
   end
 
   it "renders the edit thought form" do
@@ -18,7 +19,9 @@ RSpec.describe "thoughts/edit", type: :view do
     assert_select "form[action=?][method=?]", thought_path(thought), "post" do
       assert_select "input[name=?]", "thought[title]"
 
-      assert_select "textarea[name=?]", "thought[body]"
+      assert_select "input[name=?][type=?]", "thought[thumbnail]", "file"
+
+      assert_select "trix-editor[input]"
     end
   end
 end
