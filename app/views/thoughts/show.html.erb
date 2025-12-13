@@ -9,7 +9,7 @@
     <h1 class="post-title" style="font-size: 2.5rem; margin-bottom: 1rem;">
       <%= @thought.title %>
     </h1>
-    
+
     <div class="post-meta" style="margin-bottom: 2rem;">
       <span class="post-date"><%= @thought.created_at.strftime("%d %b %Y") %></span>
       <% if @thought.featured? %>
@@ -17,8 +17,14 @@
       <% end %>
     </div>
 
+    <% if @thought.thumbnail.attached? %>
+      <div class="post-thumbnail" style="margin-bottom: 2rem; width: 100%; height: 400px; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <%= image_tag @thought.thumbnail, style: "width: 100%; height: 100%; object-fit: cover;" %>
+      </div>
+    <% end %>
+
     <div class="post-content" style="line-height: 1.7; font-size: 1.1rem;">
-      <%= simple_format(@thought.body) %>
+      <%= @thought.body %>
     </div>
   </article>
 

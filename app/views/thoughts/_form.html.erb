@@ -17,8 +17,15 @@
   </div>
 
   <div class="my-5">
-    <%= form.label :body %>
-    <%= form.textarea :body, rows: 4, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": thought.errors[:body].none?, "border-red-400 focus:outline-red-600": thought.errors[:body].any?}] %>
+    <%= form.label :thumbnail, "Thumbnail Image" %>
+    <%= form.file_field :thumbnail, accept: "image/*", class: "block w-full mt-2 text-sm text-gray-900 border border-gray-400 rounded-md cursor-pointer focus:outline-blue-600 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" %>
+    <p class="mt-1 text-sm text-gray-500">This image will be displayed as the post thumbnail</p>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :body, "Content" %>
+    <%= form.rich_text_area :body, class: "block shadow-sm rounded-md border border-gray-400 mt-2 w-full" %>
+    <p class="mt-1 text-sm text-gray-500">Use the toolbar to format text and insert images inline</p>
   </div>
 
   <% if user_signed_in? %>

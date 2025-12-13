@@ -67,6 +67,6 @@ class ThoughtsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def thought_params
-      params.expect(thought: [ :title, :body, :featured ])
+      params.expect(thought: [ :title, :body, :featured, :thumbnail ])
     end
 end

@@ -111,3 +111,5 @@ document.addEventListener('turbo:load', function() {
   console.log('Turbo Load');
   initializeAvatarModal();
 });
+import "trix"
+import "@rails/actiontext"

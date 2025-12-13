@@ -9,43 +9,62 @@
     <section class="featured-posts">
       <h2 style="font-size: 2rem; margin-bottom: 1.5rem;">Featured Posts</h2>
       <p style="color: #666; font-size: 0.9rem; margin-top: -1rem; margin-bottom: 1.5rem;">Highlighted thoughts and essays.</p>
-      
+
       <% @featured_thoughts.each do |thought| %>
-        <article class="featured-post">
-          <div class="featured-post-thumbnail">
-            <!-- Placeholder for future image functionality -->
-          </div>
-          <div class="featured-post-content">
-            <h3><%= link_to thought.title, thought %></h3>
-            <p class="featured-post-excerpt">
-              <%= truncate(thought.body, length: 150) %>
+        <article style="display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #eee;">
+          <% if thought.thumbnail.attached? %>
+            <div style="flex-shrink: 0; width: 200px; height: 150px;">
+              <%= link_to thought do %>
+                <%= image_tag thought.thumbnail, style: "width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" %>
+              <% end %>
+            </div>
+          <% end %>
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">
+              <%= link_to thought.title, thought, style: "color: #333; text-decoration: none;" %>
+            </h3>
+            <div style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">
+              <%= thought.created_at.strftime("%d %b %Y") %>
+              <% if user_signed_in? %>
+                • <%= link_to "Edit", edit_thought_path(thought), class: "admin-link" %>
+                • <%= link_to "Delete", thought, method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "admin-link delete-link" %>
+              <% end %>
+            </div>
+            <p style="color: #555; line-height: 1.6; margin: 0;">
+              <%= truncate(thought.body.to_plain_text, length: 150) %>
             </p>
           </div>
         </article>
       <% end %>
     </section>
+
+    <div style="border-top: 2px solid #333; margin: 3rem 0 2rem 0;"></div>
   <% end %>
 
   <% @thoughts.each do |thought| %>
-    <article class="post-body">
-      <h2 class="post-title">
-        <%= link_to thought.title, thought %>
-      </h2>
-      <div class="post-meta">
-        <span class="post-date"><%= thought.created_at.strftime("%d %b %Y") %></span>
-        <% if user_signed_in? %>
-          <span class="post-categories">
+    <article style="display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #eee;">
+      <% if thought.thumbnail.attached? %>
+        <div style="flex-shrink: 0; width: 200px; height: 150px;">
+          <%= link_to thought do %>
+            <%= image_tag thought.thumbnail, style: "width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" %>
+          <% end %>
+        </div>
+      <% end %>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">
+          <%= link_to thought.title, thought, style: "color: #333; text-decoration: none;" %>
+        </h3>
+        <div style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">
+          <%= thought.created_at.strftime("%d %b %Y") %>
+          <% if user_signed_in? %>
             • <%= link_to "Edit", edit_thought_path(thought), class: "admin-link" %>
-            • <%= link_to "Delete", thought, method: :delete, 
-                  data: { turbo_confirm: "Are you sure?" }, 
-                  class: "admin-link delete-link" %>
-          </span>
-        <% end %>
+            • <%= link_to "Delete", thought, method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "admin-link delete-link" %>
+          <% end %>
+        </div>
+        <p style="color: #555; line-height: 1.6; margin: 0;">
+          <%= truncate(thought.body.to_plain_text, length: 150) %>
+        </p>
       </div>
-
-      <p><%= truncate(thought.body, length: 300) %></p>
-
-      <%= link_to "More …", thought %>
     </article>
   <% end %>
 
