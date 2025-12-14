@@ -27,6 +27,9 @@ Rails.application.configure do
   # Set the default URL options for Active Storage and Action Controller
   config.action_controller.default_url_options = { host: "trueml.org", protocol: "https" }
 
+  # Configure Active Storage to use the correct host for URL generation
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
 
