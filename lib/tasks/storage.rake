@@ -52,4 +52,21 @@ namespace :storage do
       end
     end
   end
+
+  desc "Clean up orphaned blobs without files"
+  task clean_orphaned: :environment do
+    service = ActiveStorage::Blob.service
+
+    puts "=== Cleaning Orphaned Blobs ==="
+    ActiveStorage::Blob.find_each do |blob|
+      if blob.service_name != Rails.configuration.active_storage.service.to_s
+        puts "Deleting blob ##{blob.id} (wrong service: #{blob.service_name})"
+        blob.purge
+      elsif !service.exist?(blob.key)
+        puts "Deleting blob ##{blob.id} (file missing: #{blob.key})"
+        blob.purge
+      end
+    end
+    puts "Done!"
+  end
 end
